@@ -47,22 +47,24 @@ app.post('/api/people', function(req, res) {
 
 app.get('/api/people/:id', function(req, res) {
   //TODO: can't get id greater than database contents.
-  Person.where({ id:req.params.id }).fetch().then(function(result) {
-    res.json({ person: result.toJSON() });
+  Person.where({ id:req.params.id }).fetch().then(function(person) {
+    res.json({ person: person.toJSON() });
   });
 });
 app.put('/api/people/:id', function(req, res) {
-
-
  var person = people[req.params.id];
   person.name = req.body.name;
   res.json({ person: person });
 });
 
 app.delete('/api/people/:id', function(req, res) {
-  var deleted = !!people[req.params.id];
-  delete people[req.params.id];
-  res.json({ status: deleted ? 'deleted' : 'ok' });
+  Person.where({ id:req.params.id }).fetch()
+  .then(function(person) {
+    return person.destroy();
+  })
+  .then(function() {
+    res.json({ status: 'ok' });
+  });
 });
 
 var server = app.listen(process.env.PORT || 3000, function() {
