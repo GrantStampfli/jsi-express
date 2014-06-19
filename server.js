@@ -7,6 +7,16 @@ app.use(require('body-parser')());
 app.use(require('method-override')('_method'));
 app.use(express.static(__dirname + '/public'));
 
+var env = process.env.NODE_ENV || 'development';
+var knexConfig = require('./knexfile.js')[env];
+var knex = require('knex')(knexConfig);
+var bookshelf = require('bookshelf')(knex);
+
+var Person = bookshelf.Model.extend({
+  tableName: 'people'
+});
+
+
 var people = {};
 var peopleSequence = (function() {
   var sequence = 1;
@@ -22,21 +32,29 @@ app.get('/', function(req, res) {
 });
 
 app.get('/api/people', function(req, res) {
-  res.json({ people: _.values(people) });
+  Person.fetchAll().then(function(result) {
+    res.json({ people: result.toJSON()});
+  });
+
 });
 
 app.post('/api/people', function(req, res) {
-  var id = peopleSequence();
-  var person = {
-    id: id,
-    name: req.param('name')
-  };
-  people[id] = person;
-  res.json({ person: person });
+  Person.forge({ name: req.param('name') }).save().then(function(person) {
+    res.json({ person: person.toJSON() });
+  });
+
 });
 
+app.get('/api/people/:id', function(req, res) {
+  //TODO: can't get id greater than database contents.
+  Person.where({ id:req.params.id }).fetch().then(function(result) {
+    res.json({ person: result.toJSON() });
+  });
+});
 app.put('/api/people/:id', function(req, res) {
-  var person = people[req.params.id];
+
+
+ var person = people[req.params.id];
   person.name = req.body.name;
   res.json({ person: person });
 });
