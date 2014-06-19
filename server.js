@@ -49,12 +49,20 @@ app.get('/api/people/:id', function(req, res) {
   //TODO: can't get id greater than database contents.
   Person.where({ id:req.params.id }).fetch().then(function(person) {
     res.json({ person: person.toJSON() });
-  });
+  }).done();
 });
 app.put('/api/people/:id', function(req, res) {
- var person = people[req.params.id];
-  person.name = req.body.name;
-  res.json({ person: person });
+  Person.where({ id:req.params.id }).fetch()
+  .then(function(person) {
+    person.set({
+      name: req.body.name,
+      address: req.body.address
+    });
+    return person.save();
+  })
+  .then(function(person) {
+    res.json({ person: person.toJSON() });
+  });
 });
 
 app.delete('/api/people/:id', function(req, res) {
